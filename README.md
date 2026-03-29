@@ -278,3 +278,25 @@ The bundled model weights are governed by the [Apache 2.0 licence](https://huggi
 - [Xenova / onnx-community](https://huggingface.co/onnx-community) — for the ONNX-converted and quantized model weights
 - [Hugging Face Transformers.js](https://github.com/huggingface/transformers.js) — for the ORT-backed JavaScript inference library
 - [Tauri](https://tauri.app/) — for making lightweight, secure desktop apps with web frontends practical
+
+---
+
+## Citation
+
+### Academic Citation
+
+If you use this codebase in your research or project, please cite:
+
+```bibtex
+@software{qwen3508b_onnx_desktop,
+  title = {Qwen3508B-onnx-desktop: A portable Tauri v2 desktop application for local LLM inference},
+  author = {Drift Johnson},
+  year = {2025},
+  url = {https://github.com/MushroomFleet/Qwen35-08B-onnx-desktop-dev},
+  version = {0.5.0}
+}
+```
+
+### Donate:
+
+[![Ko-Fi](https://cdn.ko-fi.com/cdn/kofi3.png?v=3)](https://ko-fi.com/driftjohnson)
