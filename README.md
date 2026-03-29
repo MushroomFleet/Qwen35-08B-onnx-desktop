@@ -92,29 +92,11 @@ Tauri provides the native shell (file system, HTTP, MSI packaging) while React p
 
 ### Option A — Install the MSI (end users)
 
-1. Download the latest `.msi` from the [Releases](https://github.com/MushroomFleet/Qwen35-08B-onnx-desktop-dev/releases) page.
+1. Download the latest `.msi` from the [Releases](https://github.com/MushroomFleet/Qwen35-08B-onnx-desktop/releases) page.
 2. Run the installer.
 3. Launch **Qwen3.5-0.8B Desktop** from the Start Menu.
 4. On first launch, click **Download Model** and wait for the ~600 MB Q4 weights to download.
 5. Start chatting — fully offline from this point on.
-
-### Option B — Build From Source (developers)
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/MushroomFleet/Qwen35-08B-onnx-desktop-dev.git
-cd Qwen35-08B-onnx-desktop-dev
-
-# 2. Install Node dependencies
-npm install
-
-# 3. Run in development mode (hot-reload)
-npm run tauri dev
-
-# 4. Build the production MSI
-npm run tauri build
-# → src-tauri/target/release/bundle/msi/
-```
 
 ---
 
@@ -202,30 +184,6 @@ Qwen3.5-0.8B is Alibaba Cloud's compact instruct model with native chain-of-thou
 
 ---
 
-## Project Structure
-
-```
-qwen3508b-desktop/
-├── src-tauri/              # Rust / Tauri shell
-│   ├── src/
-│   │   ├── commands/
-│   │   │   ├── download.rs   # HTTP streaming + progress events
-│   │   │   └── cache.rs      # Manifest validation
-│   │   └── lib.rs
-│   └── tauri.conf.json
-├── src/                    # React / TypeScript frontend
-│   ├── workers/
-│   │   └── model.worker.ts   # ORT session (runs off main thread)
-│   ├── stores/               # Zustand state
-│   ├── components/           # React UI components
-│   └── lib/                  # Path resolution, chat template, parser
-├── public/
-│   └── ort-wasm/             # ORT WASM binaries (served statically)
-└── vite.config.ts
-```
-
----
-
 ## Troubleshooting
 
 **The app shows "WASM" in the footer instead of "WEBGPU"**
@@ -241,20 +199,6 @@ Close other applications to free RAM/VRAM. The Q4 model requires ~900 MB VRAM on
 The MSI is not code-signed in development builds. Click "More info → Run anyway" to proceed. Release builds should be signed; see the [contributing guide](#contributing) for details.
 
 ---
-
-## Contributing
-
-Contributions are welcome. Please open an issue before submitting a large PR so the approach can be discussed.
-
-```bash
-# Fork, then clone your fork
-git clone https://github.com/YOUR_USERNAME/Qwen35-08B-onnx-desktop-dev.git
-
-# Create a feature branch
-git checkout -b feat/your-feature
-
-# Make your changes, then open a PR against main
-```
 
 Areas of interest:
 - macOS / Linux support (Tauri supports both; the main gap is installer format and path handling)
@@ -292,7 +236,7 @@ If you use this codebase in your research or project, please cite:
   title = {Qwen3508B-onnx-desktop: A portable Tauri v2 desktop application for local LLM inference},
   author = {Drift Johnson},
   year = {2025},
-  url = {https://github.com/MushroomFleet/Qwen35-08B-onnx-desktop-dev},
+  url = {https://github.com/MushroomFleet/Qwen35-08B-onnx-desktop},
   version = {0.5.0}
 }
 ```
