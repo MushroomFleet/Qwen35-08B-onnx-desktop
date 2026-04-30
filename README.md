@@ -1,362 +1,224 @@
-# Fusion Horizon UI
+# Qwen3.5-0.8B ONNX Desktop
 
-> **A hermeneutic interpretation engine with built-in local LLM inference — no API key required, no cloud dependency.**
+> A portable Tauri v2 desktop application that runs the **Qwen3.5-0.8B** language model fully **on-device** — no servers, no cloud, no Python runtime. Just a single `.msi` installer and your GPU.
 
-Built with **Tauri v2 + React 19 + TypeScript + Vite** and powered by **ONNX Runtime Web (WebGPU/WASM)**, this application runs the four-phase hermeneutic circle pipeline (Horizon Mapping, Dialectical Analysis, Iterative Convergence, Horizon Fusion) using a local [Qwen3.5-0.8B](https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX) language model that executes entirely on your own hardware. Your data never leaves your machine.
-
-An optional OpenRouter remote provider is available for users who want to use larger cloud models with their own API key.
-
----
-
-## What It Does
-
-| Capability | Detail |
-|---|---|
-| **Hermeneutic Circle Pipeline** | Four-agent interpretive system: Horizon Mapping, Dialectic Analysis, Iteration Control, Horizon Fusion |
-| **Built-in Local LLM** | Qwen3.5-0.8B Q4 ONNX — runs entirely in-browser via Web Worker |
-| **WebGPU Acceleration** | GPU inference via WebGPU API; automatic WASM fallback on unsupported hardware |
-| **Zero-Config Default** | Works out of the box — no API key, no server, no Python |
-| **OpenRouter Remote Provider** | Optional BYOK remote inference via OpenRouter.ai for larger models |
-| **Streaming Inference** | Token-by-token generation with live progress and abort support |
-| **Thinking Mode** | Toggle Qwen3.5's chain-of-thought reasoning on or off |
-| **Interactive & Single-Query Modes** | One-shot interpretation or multi-turn interactive sessions |
-| **Custom Writer Prompts** | Load custom writer prompts to guide the fusion synthesis phase |
-| **Session Persistence** | Conversation history saved locally; reload past sessions |
-| **Response Export** | Export results as Markdown or JSON |
-| **Portable MSI Installer** | Single `.msi` file for Windows distribution via Tauri v2 |
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D6.svg)](https://github.com/MushroomFleet/Qwen35-08B-onnx-desktop)
+[![Tauri](https://img.shields.io/badge/Tauri-v2-FFC131.svg)](https://tauri.app/)
+[![ONNX Runtime](https://img.shields.io/badge/ONNX_Runtime-WebGPU-00599C.svg)](https://onnxruntime.ai/)
 
 ---
 
-## Architecture Overview
+## ✨ Overview
 
-```
-+-----------------------------------------------------------------+
-|  Tauri v2 (Rust shell)                                          |
-|  +-----------------------------------------------------------+  |
-|  |  Tauri WebView                                             |  |
-|  |                                                            |  |
-|  |  React UI Thread              Web Worker                   |  |
-|  |  +--------------------+       +-----------------------+    |  |
-|  |  | Home / QueryInput  |       | qwen.worker.ts        |    |  |
-|  |  | SettingsPanel      |       | @hf/transformers v4   |    |  |
-|  |  | QwenStatusBar      |       | ORT WebGPU / WASM     |    |  |
-|  |  | ProcessTimeline    |       +-----------------------+    |  |
-|  |  | ResponseDisplay    |              ^                     |  |
-|  |  +--------------------+              |                     |  |
-|  |           |                    QwenLocalProvider            |  |
-|  |           v                          |                     |  |
-|  |  +--------------------+       +------+------+              |  |
-|  |  | OrchestratorController |   | ILLMProvider |             |  |
-|  |  +--------------------+       +------+------+              |  |
-|  |  | HorizonMapperAgent |              |                     |  |
-|  |  | DialecticAnalyzer  |    +---------+---------+           |  |
-|  |  | IterationController|    | OpenRouterProvider |           |  |
-|  |  | HorizonFusionAgent |    +-------------------+           |  |
-|  |  +--------------------+      (optional remote)             |  |
-|  +-----------------------------------------------------------+  |
-+-----------------------------------------------------------------+
-```
+**Qwen3.5-0.8B ONNX Desktop** is a reference implementation for shipping a local large language model inside a Windows desktop app with **zero server-side dependencies**. It packages the Q4-quantized [Qwen3.5-0.8B](https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX) model into a lightweight (~10 MB) MSI installer that downloads weights on first launch and runs entirely on your machine thereafter.
 
-- **ILLMProvider interface** decouples all agents from any specific LLM backend. Two implementations: `QwenLocalProvider` (default) and `OpenRouterProvider` (optional).
-- **Web Worker** runs ONNX inference in isolation, keeping the UI responsive during token generation.
-- **Zustand stores** manage hermeneutic state, model lifecycle, UI settings, and session history with localStorage persistence.
-- **providerRegistry** singleton manages provider selection and initialization.
+Built on Tauri v2, React 19, and ONNX Runtime Web with WebGPU acceleration — this project demonstrates how to deliver privacy-respecting, fully offline AI to end users without asking them to install Python, Docker, or configure a model server.
 
 ---
 
-## Hermeneutic Pipeline
+## 🎯 Key Features
 
-The interpretation pipeline executes four phases regardless of which LLM provider is active:
-
-| Phase | Agent | Purpose |
-|---|---|---|
-| 1. Horizon Mapping | `HorizonMapperAgent` | Maps pre-understanding, assumptions, biases, and user context |
-| 2. Dialectical Analysis | `DialecticAnalyzerAgent` | Part-whole dialectical interpretation with tensions and insights |
-| 3. Iteration Control | `IterationControllerAgent` | Evaluates convergence, decides to continue or finalize (2-5 cycles) |
-| 4. Horizon Fusion | `HorizonFusionAgent` | Synthesizes all cycle insights and fuses agent/user horizons |
-
-Convergence is measured by text similarity between successive cycle interpretations (default threshold: 0.85). The pipeline runs 2-5 dialectical cycles before producing a final fused response.
-
----
-
-## Requirements
-
-### To Run the MSI Installer
-- Windows 10/11 x64
-- ~1 GB free disk space (for model cache)
-- Internet connection on first launch only (for ~850 MB model download)
-- A WebGPU-capable GPU is recommended (any modern Nvidia/AMD/Intel GPU); falls back to CPU WASM if unavailable
-
-### To Build From Source
-- [Node.js](https://nodejs.org/) >= 20
-- [Rust](https://rustup.rs/) stable toolchain (MSVC)
-- [Tauri CLI v2](https://tauri.app/start/): `cargo install tauri-cli --version "^2"`
-- [WiX Toolset v4+](https://github.com/wixtoolset/wix): `dotnet tool install --global wix`
-- Windows SDK (included with Visual Studio Build Tools)
+- **🚀 Fully On-Device Inference** — All generation runs locally via ONNX Runtime Web. No telemetry, no API keys, no cloud calls after the initial weight download.
+- **⚡ WebGPU Acceleration** — Primary execution provider with automatic WASM fallback for systems without WebGPU support.
+- **📦 Tiny Installer** — The `.msi` ships at ~10 MB. The ~600 MB Q4 model weights are downloaded once on first run and cached permanently.
+- **💬 Streaming Chat Interface** — Token-by-token streaming with live tokens/sec metrics, conversation history, and stop-generation control.
+- **🧠 Thinking Mode Toggle** — Surface or hide Qwen3.5's chain-of-thought reasoning via a single toggle. `<think>` blocks render in collapsible "Reasoning" boxes.
+- **💾 Persistent Conversations** — Chat sessions are saved as newline-delimited JSON to your app data directory; replay past sessions from a sidebar.
+- **🎛️ Configurable Generation** — Tune `max_new_tokens`, `temperature`, `top_p`, and `repetition_penalty` from a settings drawer with persistent preferences.
+- **📊 System Information Panel** — Live readout of execution provider, GPU adapter, tokens/sec, and RAM usage.
+- **🔒 Offline After First Run** — Download once. Use forever. Air-gap friendly.
 
 ---
 
-## Getting Started
-
-### Option A — Install the MSI (End Users)
-
-1. Download the latest `.msi` from the [Releases](https://github.com/MushroomFleet/Fusion-Horizon-QwenORT-dev/releases) page.
-2. Run the installer.
-3. Launch **Fusion Horizon** from the Start Menu.
-4. On first launch, the Qwen 0.8B model (~850 MB) downloads automatically and is cached for all future use.
-5. Submit a query — the hermeneutic pipeline runs fully offline from this point.
-
-### Option B — Build From Source (Developers)
-
-```bash
-# Clone the repo
-git clone https://github.com/MushroomFleet/Fusion-Horizon-QwenORT-dev.git
-cd Fusion-Horizon-QwenORT-dev
-
-# Install dependencies
-npm install
-
-# Development — browser only (no Tauri shell)
-npm run dev
-
-# Development — with Tauri desktop shell
-npm run tauri:dev
-
-# Production MSI build
-npm run tauri:build
-```
-
-The MSI is output to `src-tauri/target/release/bundle/msi/`.
-
-### Option C — Use OpenRouter Instead of Local Model
-
-1. Open Settings
-2. Change the LLM Provider dropdown to **"OpenRouter (Remote)"**
-3. Enter your API key from [OpenRouter.ai](https://openrouter.ai/keys)
-4. (Optional) Change the model name (default: `x-ai/grok-4-fast:online`)
-5. Save — queries now use the remote model
-
-You can switch between local and remote providers at any time.
-
----
-
-## LLM Provider System
-
-The application supports two LLM providers, selectable in Settings:
-
-| Provider | Label | API Key Required | Default | Offline Capable |
-|---|---|---|---|---|
-| `qwen-local` | Built-in (Qwen 0.8B) | No | Yes | Yes (after first download) |
-| `openrouter` | OpenRouter (Remote) | Yes (BYOK) | No | No |
-
-When the **Built-in** provider is selected:
-- The QwenStatusBar shows model loading/download progress
-- The model runs in a Web Worker using ONNX Runtime Web
-- No API key or account is needed
-- All inference happens on your local GPU/CPU
-
-When **OpenRouter** is selected:
-- API key and model name fields appear in Settings
-- Your key is stored in browser localStorage only (never sent to our servers)
-- Any model available on OpenRouter can be used
-
----
-
-## Configuration
-
-### Hermeneutic Parameters
-
-| Setting | Default | Range | Effect |
-|---|---|---|---|
-| Min Cycles | 2 | 1-10 | Minimum dialectical cycles before convergence check |
-| Max Cycles | 5 | 1-10 | Maximum cycles (forces convergence) |
-| Convergence Threshold | 0.85 | 0.5-1.0 | Similarity score to trigger natural convergence |
-
-### Generation Parameters
-
-| Setting | Default | Range | Effect |
-|---|---|---|---|
-| Temperature | 0.7 | 0.0-2.0 | Randomness; lower = more deterministic |
-| Max Tokens | Auto | 100-8000 | Maximum response length per agent call |
-
-### Qwen Local Model Parameters (Internal)
-
-| Parameter | Default | Range | Effect |
-|---|---|---|---|
-| `maxNewTokens` | 2048 | 1-2048 | Maximum tokens per generation |
-| `topP` | 0.9 | 0.1-1.0 | Nucleus sampling threshold |
-| `repetitionPenalty` | 1.1 | 1.0-2.0 | Penalises repeated phrases |
-| Thinking mode | Off | On/Off | Pipeline uses `/no_think` for structured JSON output |
-
----
-
-## First-Run Model Download
-
-On first launch with the Built-in provider, the Qwen 0.8B model downloads from the HuggingFace CDN:
-
-- **Download size:** ~850 MB (Q4 quantized weights)
-- **Download time:** 30-60 seconds on broadband
-- **Cache location:** Browser Cache API (persists across sessions)
-- **Subsequent launches:** 5-15 seconds (loaded from cache, no network needed)
-
-The QwenStatusBar shows real-time progress with file name and percentage during download.
-
----
-
-## Performance
-
-### Local Qwen Inference
-
-| Metric | WebGPU | WASM (CPU) |
-|---|---|---|
-| First load (cold) | 30-60 seconds | 40-90 seconds |
-| Warm load (cached) | 5-15 seconds | 10-20 seconds |
-| Token speed | 10-40 tok/s | 5-10 tok/s |
-| Memory | ~900 MB VRAM | ~1.2 GB RAM |
-
-### Pipeline Timing (2-cycle run, WebGPU)
-
-| Phase | Estimated Time |
-|---|---|
-| Horizon Mapping | 10-30 seconds |
-| Dialectic Cycle (per cycle) | 15-40 seconds |
-| Iteration Control | 5-15 seconds |
-| Horizon Fusion | 15-40 seconds |
-| **Total (2 cycles)** | **~60-170 seconds** |
-
----
-
-## Model Information
-
-| Property | Value |
-|---|---|
-| Model | [Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) |
-| ONNX source | [onnx-community/Qwen3.5-0.8B-ONNX](https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX) |
-| Quantization | Q4 (4-bit weights) with FP16 vision encoder |
-| Parameters | 0.8 billion |
-| Context window | 32,768 tokens |
-| Model class | `Qwen3_5ForConditionalGeneration` + `AutoProcessor` |
-| License | [Apache 2.0](https://huggingface.co/Qwen/Qwen3.5-0.8B/blob/main/LICENSE) |
-
----
-
-## Tech Stack
+## 🏗️ Architecture
 
 | Layer | Technology |
 |---|---|
-| Desktop shell | [Tauri v2](https://tauri.app/) (Rust) |
-| Frontend | React 19 + TypeScript 5.9 |
-| Build tool | Vite 7 |
-| LLM runtime | [`@huggingface/transformers`](https://github.com/huggingface/transformers.js) v4 (next) |
-| Inference engine | [ONNX Runtime Web](https://onnxruntime.ai/docs/get-started/with-javascript/web.html) |
-| Execution providers | WebGPU (primary) + WASM (fallback) |
-| State management | [Zustand](https://zustand-demo.pmnd.rs/) 5 + Immer |
-| Styling | Tailwind CSS 3 |
-| Icons | FontAwesome 7 |
-| Installer | MSI via WiX (Tauri bundler) |
+| Desktop shell | Tauri v2 (Rust) |
+| Installer | MSI via `tauri-bundler` |
+| Frontend | React 19 + TypeScript 5 |
+| Build tool | Vite 6 |
+| LLM runtime | `@huggingface/transformers` ≥ 3.5 (ORT-backed) |
+| Execution providers | WebGPU (primary), WASM (fallback) |
+| Model | `onnx-community/Qwen3.5-0.8B-ONNX` (Q4 quantized) |
+| Styling | Tailwind CSS v4 |
+| State management | Zustand |
+| Inference isolation | Dedicated Web Worker |
+
+The ORT session runs inside a dedicated Web Worker so model inference never blocks the UI thread. The Rust backend handles HTTP streaming downloads (avoiding gigabytes-in-JS-heap issues) and exposes the local cache directory via Tauri's asset protocol so the model loader can read weights as if they were remote URLs.
 
 ---
 
-## Project Structure
+## 📥 Installation
 
-```
-Fusion-Horizon-UI/
-+-- src/
-|   +-- core/
-|   |   +-- agents/          # Hermeneutic pipeline agents
-|   |   +-- api/             # ILLMProvider, OpenRouterProvider, QwenLocalProvider, providerRegistry
-|   |   +-- qwen/            # Web Worker, types, parseThinking
-|   |   +-- protocol/        # Agent message protocol
-|   |   +-- state/           # HermeneuticState, layers
-|   +-- components/
-|   |   +-- common/          # Reusable UI components
-|   |   +-- features/        # SettingsPanel, QwenStatusBar, QueryInput, etc.
-|   +-- hooks/               # useProvider, useOpenRouter, useOrchestrator, etc.
-|   +-- stores/              # Zustand stores (hermeneutic, UI, session, qwen)
-|   +-- config/              # System prompts, settings
-|   +-- types/               # TypeScript type definitions
-|   +-- lib/                 # Convergence, JSON parser, exporters
-+-- src-tauri/
-|   +-- src/                 # Rust entry point with HTTP plugin
-|   +-- capabilities/        # Tauri v2 permission grants
-|   +-- icons/               # App icons
-|   +-- tauri.conf.json      # App config, CSP, bundle settings
-+-- vite.config.ts           # Build config with WASM static copy
-+-- package.json
-```
+### For End Users
+
+1. Download the latest `Qwen3508B Desktop_x.x.x_x64_en-US.msi` from the [Releases page](https://github.com/MushroomFleet/Qwen35-08B-onnx-desktop/releases).
+2. Run the installer.
+3. Launch the app — on first run, it will download ~600 MB of model weights. Subsequent launches skip straight to the chat interface.
+
+**System Requirements:**
+- Windows 10/11 (x64)
+- ~700 MB free disk space (for model cache)
+- WebGPU-capable GPU recommended (NVIDIA RTX 3060+ or equivalent); WASM fallback works on any system but is slower
 
 ---
 
-## Troubleshooting
+## 🛠️ Building from Source
 
-**QwenStatusBar shows "Model error"**
-Check the browser DevTools console (right-click the Tauri window, Inspect) for details. Common causes: insufficient VRAM, WebGPU not available, or interrupted model download. Clear the browser cache and retry.
+### Prerequisites
 
-**The app shows WASM instead of WebGPU**
-Your GPU or driver does not support WebGPU. The app still works via WASM but at lower speed (~5-10 tok/s). Update your GPU drivers to the latest version.
+- **Node.js** ≥ 20
+- **Rust** stable toolchain (`rustup update stable`)
+- **Tauri CLI v2** (`cargo install tauri-cli --version "^2.0"`)
+- **Windows SDK** (for MSI bundling)
 
-**"Qwen provider not ready" error when submitting a query**
-The model is still loading. Wait for the QwenStatusBar to show a green dot and "ready" status before submitting.
-
-**JSON parsing errors in pipeline output**
-The 0.8B model occasionally produces malformed JSON. The agents have built-in regex fallback parsers that recover gracefully in most cases. If errors persist, try switching to the OpenRouter provider with a larger model.
-
-**SmartScreen warning on MSI install**
-The MSI is not code-signed in development builds. Click "More info -> Run anyway" to proceed.
-
-**OpenRouter API errors**
-Verify your API key is correct in Settings. Check your OpenRouter account for rate limits or billing issues.
-
----
-
-## Environment Variables (Optional)
-
-Environment variables provide fallback defaults. Users configure their settings via the UI.
+### Development
 
 ```bash
-cp env.example .env
+git clone https://github.com/MushroomFleet/Qwen35-08B-onnx-desktop.git
+cd Qwen35-08B-onnx-desktop
+npm install
+npm run tauri dev
 ```
 
-| Variable | Default | Purpose |
+### Production Build
+
+```bash
+npm run tauri:build
+```
+
+The MSI will be output to:
+```
+src-tauri/target/release/bundle/msi/Qwen3508B Desktop_0.1.0_x64_en-US.msi
+```
+
+> **Tip:** Code-sign the MSI with `signtool.exe` before distribution to avoid Windows SmartScreen warnings.
+
+---
+
+## 🚀 Performance
+
+| Metric | Target |
+|---|---|
+| Model load time | ≤ 10 seconds on WebGPU (RTX 3060+) |
+| First token latency | ≤ 2 seconds after send |
+| Streaming throughput (WebGPU) | ≥ 20 tok/s |
+| Streaming throughput (WASM) | ≥ 5 tok/s |
+| MSI installer size | ≤ 10 MB (weights excluded) |
+
+---
+
+## 🗂️ Project Structure
+
+```
+qwen3508b-desktop/
+├── src-tauri/              # Rust backend
+│   ├── src/
+│   │   ├── commands/       # Download, cache validation, sysinfo
+│   │   ├── state.rs        # Shared app state
+│   │   └── lib.rs
+│   └── tauri.conf.json     # Bundle / window / CSP config
+├── src/                    # React frontend
+│   ├── workers/
+│   │   └── model.worker.ts # ORT session lives here
+│   ├── stores/             # Zustand state (model, chat, settings)
+│   ├── components/         # UI components
+│   ├── lib/                # Path resolution, chat templates, parsers
+│   └── App.tsx             # Phase router
+├── public/
+│   └── ort-wasm/           # ORT WASM binaries
+└── package.json
+```
+
+---
+
+## 🔄 User Flow
+
+**First Run:**
+1. App detects no local model cache → shows download screen
+2. Rust streams ~600 MB of Q4 ONNX weights to `{app_cache_dir}/qwen3508b-onnx/`
+3. Manifest written → ORT session initializes in Web Worker
+4. Chat interface ready
+
+**Subsequent Runs:**
+1. Manifest detected → skip directly to model loading
+2. ORT session ready in seconds → chat interface ready
+
+**Sending a Message:**
+1. User input → conversation formatted via Qwen3.5 chat template
+2. `model.generate()` called with `TextStreamer` → tokens stream live
+3. Stop button aborts generation; partial output is preserved
+
+---
+
+## 🛡️ Privacy & Offline Use
+
+- **No telemetry.** The app makes zero network requests after the initial model download.
+- **No accounts.** No login, no API keys, no cloud sync.
+- **Air-gap friendly.** Once weights are cached, the app runs indefinitely without an internet connection.
+- **Conversations stay local.** Chat history is stored as plain JSON in your app data directory and never leaves your machine.
+
+---
+
+## ⚙️ Configuration
+
+Generation parameters are user-configurable via the in-app settings drawer:
+
+| Parameter | Range | Default |
 |---|---|---|
-| `VITE_OPENROUTER_API_KEY` | (empty) | Fallback API key |
-| `VITE_OPENROUTER_MODEL` | `x-ai/grok-4-fast:online` | Fallback model name |
-| `VITE_OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` | API base URL |
-| `VITE_MIN_CYCLES` | `2` | Min hermeneutic cycles |
-| `VITE_MAX_CYCLES` | `5` | Max hermeneutic cycles |
-| `VITE_CONVERGENCE_THRESHOLD` | `0.85` | Convergence threshold |
-| `VITE_REQUEST_TIMEOUT` | `30000` | API timeout (ms) |
-| `VITE_MAX_RETRIES` | `3` | Retry count |
-| `VITE_RETRY_DELAY` | `1000` | Retry delay (ms) |
+| `max_new_tokens` | 1–2048 | 512 |
+| `temperature` | 0.0–2.0 | 0.7 |
+| `top_p` | 0.1–1.0 | 0.9 |
+| `repetition_penalty` | 1.0–2.0 | 1.1 |
+
+Settings persist across sessions via Zustand's `persist` middleware.
 
 ---
 
-## Licence
+## 🤝 Contributing
 
-This project is released under the **MIT Licence**. See [LICENSE](./LICENSE) for details.
+Contributions, issues, and feature requests are welcome. Please open an issue to discuss substantial changes before submitting a PR.
 
-The bundled model weights are governed by the [Apache 2.0 licence](https://huggingface.co/Qwen/Qwen3.5-0.8B/blob/main/LICENSE) from Alibaba Cloud / Qwen Team.
-
----
-
-## Acknowledgements
-
-- [Qwen Team @ Alibaba Cloud](https://github.com/QwenLM) — for the Qwen3.5 model family
-- [Xenova / onnx-community](https://huggingface.co/onnx-community) — for the ONNX-converted and quantized model weights
-- [Hugging Face Transformers.js](https://github.com/huggingface/transformers.js) — for the ORT-backed JavaScript inference library
-- [Tauri](https://tauri.app/) — for making lightweight, secure desktop apps with web frontends practical
-- [Fusion Horizon Orchestrator](https://github.com/MushroomFleet/Fusion-Horizon-Orchestrator) — the original Python hermeneutic pipeline
+Areas where help is particularly appreciated:
+- macOS and Linux build targets (currently Windows-only)
+- Additional quantization options (Q8, FP16)
+- Resumable downloads
+- Multi-model support / model picker UI
 
 ---
 
-## Citation
+## 📄 License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+The Qwen3.5-0.8B model itself is distributed under its own license — see the [model card on Hugging Face](https://huggingface.co/onnx-community/Qwen3.5-0.8B-ONNX).
+
+---
+
+## 🙏 Acknowledgements
+
+- [Tauri](https://tauri.app/) — for making lightweight native desktop apps possible
+- [Hugging Face Transformers.js](https://github.com/huggingface/transformers.js) — for the ORT-backed inference layer
+- [ONNX Runtime](https://onnxruntime.ai/) — for WebGPU and WASM execution providers
+- [Qwen Team](https://qwenlm.github.io/) — for the Qwen3.5 model family
+- [onnx-community](https://huggingface.co/onnx-community) — for the ONNX-converted weights
+
+---
+
+## 📚 Citation
+
+### Academic Citation
+
+If you use this codebase in your research or project, please cite:
 
 ```bibtex
-@software{fusion_horizon_qwenort,
-  title = {Fusion-Horizon-QwenORT: Hermeneutic interpretation engine with built-in local LLM inference},
+@software{qwen3508b_onnx_desktop,
+  title = {Qwen3.5-0.8B ONNX Desktop: A portable Tauri-based desktop runtime for on-device LLM inference},
   author = {Drift Johnson},
-  year = {2026},
-  url = {https://github.com/MushroomFleet/Fusion-Horizon-QwenORT-dev},
+  year = {2025},
+  url = {https://github.com/MushroomFleet/Qwen35-08B-onnx-desktop},
   version = {1.0.0}
 }
 ```
